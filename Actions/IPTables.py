@@ -1,5 +1,3 @@
-import os
-import sys
 import subprocess
 
 class IPTables:
@@ -17,6 +15,6 @@ def main():
     iptables = IPTables()
     iptables.addToWhiteList("192.168.1.34")
     subprocess.run(["sudo", "iptables", "-L"])
-    
+
 if __name__ == '__main__':
     main()
