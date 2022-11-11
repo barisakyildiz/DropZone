@@ -11,15 +11,15 @@ class HTTPProxy:
     def initSocket(self):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.bind('', self.listen_port)
+            s.bind(('', self.listen_port))
             s.listen(self.max_conn)
             print("[!] Initializing Socket...\n\
-                   [!] Socket Binded Successfully.\n\
-                   [!] Proxy Server Started Listening Port [{}]".format(self.listen_port))
+            [!] Socket Binded Successfully.\n\
+            [!] Proxy Server Started Listening Port [{}]".format(self.listen_port))
         except Exception as e:
             print("An exception occured during initialization: {}".format(e))
             sys.exit(2)
-        self.listen_port(s)
+        self.listenOnPort(s)
         s.close()
     
     def listenOnPort(self, sock):
@@ -36,16 +36,16 @@ class HTTPProxy:
     
     def conn_string(self, conn, data, adrr):
         try:
-            first_line = data.split("\n")[0]
-            url = first_line.split(" ")[1]
-            http_pos = url.find("://")
+            first_line = data.split(b"\n")
+            first_line = first_line[0]
+            url = first_line.split(b" ")[1]
+            http_pos = url.find(b"://")
             if http_pos == -1:
                 temp = url
             else:
                 temp = url[(http_pos + 3):]
-            port_pos = temp.find(":")
-            webserver_pos = temp.find("/")
-
+            port_pos = temp.find(b":")
+            webserver_pos = temp.find(b"/")
             if webserver_pos == -1:
                 webserver_pos = len(temp)
             webserver = ""
@@ -69,9 +69,21 @@ class HTTPProxy:
             s.send(data)
             
             while True:
-                pass
-        except:
-            pass
+                reply = s.recv(self.buffer_size)
+                if len(reply) > 0:
+                    conn.send(reply)
+                    dar = float(len(reply))
+                    dar = float(dar / 1024)
+                    dar = "{}.3s".format(dar)
+                    print("[!] Request Done: {} => {} <= {}".format(adrr[0], dar, webserver))
+                else:
+                    break
+            s.close()
+            conn.close()
+        except socket.error as e:
+            s.close()
+            conn.close()
+            sys.exit(1)
         
     
 

@@ -1,7 +1,8 @@
-import requests
+import httpproxy
 
 def main():
-    pass
+    proxy = httpproxy.HTTPProxy(4444, 8192, 5)
+    proxy.initSocket()
 
 if __name__ == '__main__':
     main()
