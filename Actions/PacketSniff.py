@@ -2,6 +2,7 @@ import socket
 import struct
 from binascii import hexlify
 from textwrap import wrap
+import pyee
 
 class PacketSniffer:
     def __init__(self):
@@ -16,33 +17,31 @@ class PacketSniffer:
     def initSocket(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
         while True:
-            raw_data, addr = s.recvfrom(14) #65565
-            dest, src, proto, data = self.ethernetHead(raw_data=raw_data)
-            print("--- Ethernet Frame Results --- \nDestination {}, Source: {}\nProtocol: {}\n\n\n".format(dest, src, proto))
-            if proto == 8:
-                ipv4_head = self.ipv4Head(data)
-                print(self.TAB_1 + 'IPv4 Packet Results:')
-                print(self.TAB_2 + 'Version: {}, Header Length: {}, TTL: {}'.format(ipv4_head[0], ipv4_head[1], ipv4_head[2]))
-                print(self.TAB_2 + 'Protocol: {}, Source: {}, Target: {}\n\n\n'.format(ipv4_head[3], ipv4_head[4], ipv4_head[5]))
-                if ipv4_head[3] == 6:
-                    tcp = self.tcpHead(ipv4_head[6])
-                    print(self.TAB_1 + 'TCP Segment Results:')
-                    print(self.TAB_1 + 'Source Port: {}, Destination Port: {}'.format(tcp[0], tcp[1]))
-                    print(self.TAB_2 + 'Sequence: {}, Acknowledgement: {}'.format(tcp[2], tcp[3]))
-                    print(self.TAB_2 + 'Flags:')
-                    print(self.TAB_3 + 'URG: {}, ACK: {}, PSH: {}'.format(tcp[4], tcp[5], tcp[6]))
-                    print(self.TAB_3 + 'RST: {}, SYN: {}, FIN: {}'.format(tcp[7], tcp[8], tcp[9]))
-                    if len(tcp[10]) > 0:
-                        #HTTP REQUEST
-                        if tcp[0] == 80 or tcp[1] == 80:
-                            print(self.TAB_3+ 'HTTP Data:')
-                        else:
-                            print(self.TAB_2 + 'TCP Data:')
-                            print(self.TAB_3 + tcp[10])
+            raw_data, addr= s.recvfrom(65565) #65565
+            print("raw_data: {}     addr: {}     sizeof: {}\n\n".format(raw_data, addr, len(raw_data)))
+            ipv4_head = self.ipv4Head(raw_data=raw_data)
+            print(self.TAB_1 + 'IPv4 Packet Results:')
+            print(self.TAB_2 + 'Version: {}, Header Length: {}, TTL: {}'.format(ipv4_head[0], ipv4_head[1], ipv4_head[2]))
+            print(self.TAB_2 + 'Protocol: {}, Source: {}, Target: {}\n\n\n'.format(ipv4_head[3], ipv4_head[4], ipv4_head[5]))
+            if ipv4_head[3] == 6:
+                tcp = self.tcpHead(ipv4_head[6])
+                print(self.TAB_1 + 'TCP Segment Results:')
+                print(self.TAB_1 + 'Source Port: {}, Destination Port: {}'.format(tcp[0], tcp[1]))
+                print(self.TAB_2 + 'Sequence: {}, Acknowledgement: {}'.format(tcp[2], tcp[3]))
+                print(self.TAB_2 + 'Flags:')
+                print(self.TAB_3 + 'URG: {}, ACK: {}, PSH: {}'.format(tcp[4], tcp[5], tcp[6]))
+                print(self.TAB_3 + 'RST: {}, SYN: {}, FIN: {}'.format(tcp[7], tcp[8], tcp[9]))
+                if len(tcp[10]) > 0:
+                    #HTTP REQUEST
+                    if tcp[0] == 80 or tcp[1] == 80:
+                        print(self.TAB_3+ 'HTTP Data:')
+                    else:
+                        print(self.TAB_2 + 'TCP Data:')
+                        print(self.TAB_3 + str(tcp[10]))
 
 
     def ethernetHead(self, raw_data): #Parsing the Ethernet Frames
-        destination, source, prototype = struct.unpack('! 6s 6s H', raw_data[:14])
+        destination, source, prototype = struct.unpack("!6s6sH", raw_data[:14])
         destination_mac = str(hexlify(destination)); destination_mac = destination_mac[2:14]
         dest_list = wrap(destination_mac, 2)
         destination_mac = ":".join(dest_list)
@@ -51,7 +50,7 @@ class PacketSniffer:
         source_mac = ":".join(src_list)
         proto = socket.htons(prototype)
         data = raw_data[14:]
-        return destination_mac, source_mac, proto, data
+        return destination, source, proto, data
     
     def ipv4Head(self, raw_data): #For parsing the IP Headers
         version_header_len = raw_data[0]
