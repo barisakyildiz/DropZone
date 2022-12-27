@@ -2,7 +2,7 @@ import socket
 import struct
 from binascii import hexlify
 from textwrap import wrap
-import pyee
+from time import time
 
 class PacketSniffer:
     def __init__(self):
@@ -16,7 +16,9 @@ class PacketSniffer:
     
     def initSocket(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+        total_time = 0
         while True:
+            start = time()
             raw_data, addr= s.recvfrom(65565) #65565
             print("raw_data: {}     addr: {}     sizeof: {}\n\n".format(raw_data, addr, len(raw_data)))
             ipv4_head = self.ipv4Head(raw_data=raw_data)
@@ -38,7 +40,10 @@ class PacketSniffer:
                     else:
                         print(self.TAB_2 + 'TCP Data:')
                         print(self.TAB_3 + str(tcp[10]))
-
+            stop = time()
+            total_time += stop - start
+            print(total_time)
+            
 
     def ethernetHead(self, raw_data): #Parsing the Ethernet Frames
         destination, source, prototype = struct.unpack("!6s6sH", raw_data[:14])
