@@ -3,6 +3,7 @@ import struct
 from binascii import hexlify
 from textwrap import wrap
 from time import time
+import IPTables
 
 class PacketSniffer:
     def __init__(self):
@@ -10,6 +11,7 @@ class PacketSniffer:
         self.TAB_2 = "\t\t - "
         self.TAB_3 = "\t\t\t - "
         self.TAB_4 = "\t\t\t\t - "
+        self.MAX_PACKET_PER_5SECS = 5000
 
     def getIp(self, address):
         return '.'.join(map(str, address))
@@ -17,6 +19,7 @@ class PacketSniffer:
     def initSocket(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
         total_time = 0
+        dict_of_ips = {}
         while True:
             start = time()
             raw_data, addr= s.recvfrom(65565) #65565
@@ -33,16 +36,26 @@ class PacketSniffer:
                 print(self.TAB_2 + 'Flags:')
                 print(self.TAB_3 + 'URG: {}, ACK: {}, PSH: {}'.format(tcp[4], tcp[5], tcp[6]))
                 print(self.TAB_3 + 'RST: {}, SYN: {}, FIN: {}'.format(tcp[7], tcp[8], tcp[9]))
+                try:
+                    dict_of_ips[str(addr[0])] = dict_of_ips[str(addr[0])] + 1
+                except Exception as e:
+                    print("Adding new ip to the tracking list...")
+                    dict_of_ips[str(addr[0])] = 1
                 if len(tcp[10]) > 0:
                     #HTTP REQUEST
-                    if tcp[0] == 80 or tcp[1] == 80:
+                    if tcp[1] == 80 or tcp[1] == 443:
                         print(self.TAB_3+ 'HTTP Data:')
                     else:
                         print(self.TAB_2 + 'TCP Data:')
                         print(self.TAB_3 + str(tcp[10]))
             stop = time()
             total_time += stop - start
+            if total_time <= 5 and dict_of_ips[str(addr[0])] >= self.MAX_PACKET_PER_5SECS:
+                IPTables.addToBlacklist() #solve this
+            if total_time > 5:
+                dict_of_ips = {}
             print(total_time)
+            print(dict_of_ips)
             
 
     def ethernetHead(self, raw_data): #Parsing the Ethernet Frames
