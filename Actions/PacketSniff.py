@@ -51,9 +51,11 @@ class PacketSniffer:
             stop = time()
             total_time += stop - start
             if total_time <= 5 and dict_of_ips[str(addr[0])] >= self.MAX_PACKET_PER_5SECS:
-                IPTables.addToBlacklist() #solve this
+                #IPTables.addToBlacklist()
+                pass
             if total_time > 5:
                 dict_of_ips = {}
+                total_time = 0
             print(total_time)
             print(dict_of_ips)
             

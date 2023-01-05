@@ -89,7 +89,7 @@ class HTTPProxy:
 
 def main():
     test = HTTPProxy(80, 8192, 5)
-    test.conn_string(5, 5, 5)
+    test.conn_string(5, "5", 5)
 
 if __name__ == '__main__':
     main()
