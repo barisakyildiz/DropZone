@@ -3,7 +3,7 @@ import argparse
 import socket
 
 def main():
-    prsr = argparse.ArgumentParser(description="Auto-Dropper by Barış Akyıldız",
+    prsr = argparse.ArgumentParser(description="Auto-Defender by Barış Akyıldız",
                                    formatter_class=argparse.RawDescriptionHelpFormatter)
     prsr.add_argument("-i", "--ipaddress", help="The IP address of the machine that is going to be used in the modules")
     prsr.add_argument("-m", "--module", help="Desired module of the program to run:\n\
